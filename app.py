@@ -5,16 +5,21 @@ from flask_cors import CORS
 from sqlalchemy.dialects.postgresql import ARRAY
 from api.inventory import inventory_api
 from api.transaction import transaction_api
+from api.history import history_api
 from model.model import SellHistory, Inventory, TransactionHistory
 from db import db
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "https://localhost:3006"}})
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/stock_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/stock_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:123456@localhost/stock_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db.init_app(app)
+
 app.register_blueprint(inventory_api)
 app.register_blueprint(transaction_api)
+app.register_blueprint(history_api)
 
 
 

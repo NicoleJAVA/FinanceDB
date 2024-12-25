@@ -1,0 +1,8 @@
+{
+    "[python]": {
+        "editor.defaultFormatter": "KevinRose.vsc-python-indent"
+    },
+    "editor.formatOnSave": true,
+    "notebook.defaultFormatter": "ms-python.vscode-pylance",
+    "editor.defaultFormatter": "ms-python.vscode-pylance"
+}

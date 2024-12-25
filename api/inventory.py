@@ -10,7 +10,6 @@ def get_inventory():
     print('\n\n 123 ', type(transactions[0].average_price))
     results = [
         {
-            'id': transaction.id,
             'stock_code': transaction.stock_code,
             'transaction_type': transaction.transaction_type,
             'stock_quantity': transaction.stock_quantity,
