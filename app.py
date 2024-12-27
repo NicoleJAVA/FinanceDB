@@ -1,25 +1,28 @@
 
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from sqlalchemy.dialects.postgresql import ARRAY
 from api.inventory import inventory_api
 from api.transaction import transaction_api
 from api.history import history_api
+from api.sellHistory import sell_history_api
 from model.model import SellHistory, Inventory, TransactionHistory
 from db import db
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://localhost:3006"}})
+# CORS(app, resources={r"/*": {"origins": "https://localhost:3006"}})
+CORS(app)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/stock_db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://postgres:123456@localhost/stock_db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://admin:123456@localhost/stock_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-
+ 
 app.register_blueprint(inventory_api)
 app.register_blueprint(transaction_api)
 app.register_blueprint(history_api)
+app.register_blueprint(sell_history_api)
 
 
 
@@ -82,5 +85,5 @@ if __name__ == '__main__':
     with app.app_context():  # 建立應用程式上下文
         db.create_all()  # 在上下文中創建資料表
         convert_string_to_number()
-    app.run(port=5001, debug=True)
+    app.run(port=7007, debug=True)
 

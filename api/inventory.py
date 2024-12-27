@@ -6,8 +6,11 @@ inventory_api = Blueprint('inventory_api', __name__)
 @inventory_api.route('/inventory', methods=['GET']) 
 def get_inventory():
     symbol = request.args.get('stockCode', '2330')  
-    transactions = Inventory.query.filter_by(stock_code=symbol).all()  # 使用 SQLAlchemy 查詢
-    print('\n\n 123 ', type(transactions[0].average_price))
+    transactions = Inventory.query.all()  # 使用 SQLAlchemy 查詢
+    # transactions = Inventory.query.filter_by(stock_code=symbol).all()  # 使用 SQLAlchemy 查詢
+    print(f"Requesting data for stock code: {symbol}")  # 查看 symbol 是否正確
+    print(f"Requesting transactions -- ----{transactions}")  # 查看 symbol 是否正確
+
     results = [
         {
             'stock_code': transaction.stock_code,
@@ -31,6 +34,7 @@ def get_inventory():
         }
         for transaction in transactions
     ]
+    print('\n\n 庫存 \n', results, '\n\n')
     return jsonify(results)
 
 

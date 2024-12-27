@@ -26,6 +26,7 @@ def get_all_history():
         results.append({
             'uuid': history.uuid,
             'transaction_uuid': history.transaction_uuid,
+            'sell_record_uuid': history.sell_record_uuid,
             'inventory_uuid': history.inventory_uuid,
             'write_off_quantity': history.write_off_quantity,
             'stock_code': history.stock_code,
@@ -34,6 +35,8 @@ def get_all_history():
             'inventory_price': inventory_price,  # 加入的成交單價
             'sell_price': sell_price,            # 加入的成交單價
         })
+
+        print('\n\n\n\nHISTORY: ', results, '\n\n\n\n')
 
     return jsonify(results)
 
