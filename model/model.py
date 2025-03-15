@@ -29,23 +29,25 @@ class Inventory(db.Model):
     
     uuid = db.Column(db.String(36), primary_key=True, nullable=False, unique=True, default=lambda: str(uuid.uuid4()))  
     stock_code = db.Column(db.String(255), nullable=False)
-    # transaction_type = db.Column(db.Enum('Buy', 'Sell', 'Dividend', 'Stock Split'), nullable=False)
     transaction_type = db.Column(db.Enum('Buy', 'Sell', 'Dividend', 'Stock Split', name='transaction_type_enum'), nullable=False)
-    stock_quantity = db.Column(db.Integer, nullable=False)
-    average_price = db.Column(db.Numeric(10, 2), nullable=False)
-    total_amount = db.Column(db.Numeric(10, 2), nullable=False)
-    cost = db.Column(db.Numeric(10, 2), nullable=False)
-    reference_price = db.Column(db.Numeric(10, 2), nullable=False)
-    market_value = db.Column(db.Numeric(10, 2), nullable=False)
-    estimated_fee = db.Column(db.Numeric(10, 2), nullable=False)
-    estimated_tax = db.Column(db.Numeric(10, 2), nullable=False)
-    reference_profit_loss = db.Column(db.Numeric(10, 2), nullable=False)
-    profit_loss_rate = db.Column(db.Numeric(5, 2), nullable=False)
-    details = db.Column(db.Text)
-    date = db.Column(db.Date)
-    transaction_price = db.Column(db.Numeric(10, 2))
-    transaction_quantity = db.Column(db.Integer)
-    net_amount = db.Column(db.Numeric(10, 2))
+    
+    # 交易相關欄位
+    date = db.Column(db.Date, nullable=False)  # 成交日期
+    transaction_price = db.Column(db.Numeric(10, 2), nullable=False)  # 成交單價
+    transaction_quantity = db.Column(db.Integer, nullable=False)  # 成交股數
+    transaction_value = db.Column(db.Numeric(10, 2), nullable=False)  # 成交價金 (原 total_amount)
+    estimated_fee = db.Column(db.Numeric(10, 2), nullable=False)  # 手續費
+    estimated_tax = db.Column(db.Numeric(10, 2), nullable=False)  # 交易稅
+    net_amount = db.Column(db.Numeric(10, 2), nullable=False)  # 淨收付金額
+
+    # 新增欄位
+    unit_price = db.Column(db.Integer, nullable=False, default=lambda: 666 if uuid.uuid4().int % 2 == 0 else 777)  # 666 or 777 隨機
+
+    # 沖銷與攤提相關
+    writeOffQuantity = db.Column(db.Integer, nullable=True)  # 沖銷股數
+    remaining_quantity = db.Column(db.Integer, nullable=True)  # 剩餘股數
+    amortized_cost = db.Column(db.Numeric(10, 2), nullable=True)  # 攤提成本
+    amortized_income = db.Column(db.Numeric(10, 2), nullable=True)  # 攤提收入
 
     def __init__(self, **kwargs):
         self.uuid = kwargs.get('uuid', str(uuid.uuid4()))
