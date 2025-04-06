@@ -32,20 +32,13 @@ def convert_string_to_number():
     inventories = Inventory.query.all()
     print('\n\n inv ', inventories)
     for inventory in inventories:
-        print(inventory.average_price)
+        
         try:
                         
-            print('\n\n avg  \n\n', type(inventory.average_price))
-            inventory.average_price = float(inventory.average_price)
-            inventory.total_amount = float(inventory.total_amount)
-            inventory.cost = float(inventory.cost)
-            inventory.reference_price = float(inventory.reference_price)
-            inventory.market_value = float(inventory.market_value)
+            inventory.transaction_value = float(inventory.transaction_value)
             inventory.estimated_fee = float(inventory.estimated_fee)
             inventory.estimated_tax = float(inventory.estimated_tax)
-            inventory.reference_profit_loss = float(inventory.reference_profit_loss)
-            inventory.profit_loss_rate = float(inventory.profit_loss_rate)
-            inventory.transaction_price = float(inventory.transaction_price)
+            inventory.unit_price = float(inventory.unit_price)
             inventory.net_amount = float(inventory.net_amount)
             # 嘗試將字串轉換為浮點數，並更新到資料庫
             # if isinstance(inventory.average_price, str):

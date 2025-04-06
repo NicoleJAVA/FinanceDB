@@ -41,7 +41,7 @@ def get_all_sell_history():
                 "profit_loss_rate": float(inventory.profit_loss_rate),
                 "details": inventory.details,
                 "date": inventory.date.isoformat() if inventory.date else None,
-                "transaction_price": float(inventory.transaction_price) if inventory.transaction_price else None,
+                # "transaction_price": float(inventory.transaction_price) if inventory.transaction_price else None,
                 "transaction_quantity": inventory.transaction_quantity,
                 "net_amount": float(inventory.net_amount) if inventory.net_amount else None
             }
