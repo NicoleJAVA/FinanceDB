@@ -5,11 +5,14 @@ inventory_api = Blueprint('inventory_api', __name__)
 
 @inventory_api.route('/inventory', methods=['GET']) 
 def get_inventory():
-    symbol = request.args.get('stockCode', '2330')  
-    transactions = Inventory.query.all()  # 使用 SQLAlchemy 查詢
-    # transactions = Inventory.query.filter_by(stock_code=symbol).all()  # 使用 SQLAlchemy 查詢
-    print(f"Requesting data for stock code: {symbol}")  # 查看 symbol 是否正確
-    print(f"Requesting transactions -- ----{transactions}")  # 查看 symbol 是否正確
+    symbol = request.args.get('stockCode', '2330')
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))
+    offset = (page - 1) * limit
+
+    query = Inventory.query.filter_by(stock_code=symbol)
+    total_count = query.count()
+    transactions = query.offset(offset).limit(limit).all()
 
     results = [
         {
@@ -27,6 +30,14 @@ def get_inventory():
         for transaction in transactions
     ]
     print('\n\n 庫存 \n', results, '\n\n')
-    return jsonify(results)
+    
+    return jsonify({
+        "data": results,
+        "pagination": {
+            "page": page,
+            "limit": limit,
+            "total": total_count
+        }
+    })
 
 
