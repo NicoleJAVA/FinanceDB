@@ -26,6 +26,8 @@ class SellHistory(db.Model):
 
 class Inventory(db.Model):
     __tablename__ = 'inventory'
+
+    #inventory 新增欄位 SOP 4
     
     uuid = db.Column(db.String(36), primary_key=True, nullable=False, unique=True, default=lambda: str(uuid.uuid4()))  
     stock_code = db.Column(db.String(255), nullable=False)
@@ -39,7 +41,7 @@ class Inventory(db.Model):
     estimated_tax = db.Column(db.Numeric(10, 2), nullable=False)  # 交易稅
     net_amount = db.Column(db.Numeric(10, 2), nullable=False)  # 淨收付金額
     unit_price = db.Column(db.Integer, nullable=False, default=lambda: 666 if uuid.uuid4().int % 2 == 0 else 777)  # 666 or 777 隨機
-
+    remarks = db.Column(db.String(255), nullable=False)
 
     def __init__(self, **kwargs):
         self.uuid = kwargs.get('uuid', str(uuid.uuid4()))

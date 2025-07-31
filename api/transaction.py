@@ -12,6 +12,7 @@ def add_transaction():
     data = request.json
     transaction_uuid = str(uuid.uuid4())
     cursor = db.session()
+    #inventory 新增欄位 SOP 1
     new_transaction = Inventory(
         id=transaction_uuid,
         stock_code=data['stock_code'],
@@ -22,7 +23,8 @@ def add_transaction():
         estimated_tax=data['estimated_tax'],
         date=data['date'],
         transaction_quantity=data.get('transaction_quantity'),
-        net_amount=data.get('net_amount')
+        net_amount=data.get('net_amount'),
+        remarks=data.get('remarks'),
     )
     
     db.session.add(new_transaction)

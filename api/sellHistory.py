@@ -26,6 +26,7 @@ def get_all_sell_history():
         # 將 Inventory 資料轉換為 dict 並組成 array
         detail_data_list = [
             {
+                #inventory 新增欄位 SOP 2
                 "uuid": inventory.uuid,
                 "stock_code": inventory.stock_code,
                 "transaction_type": inventory.transaction_type,
@@ -43,7 +44,8 @@ def get_all_sell_history():
                 "date": inventory.date.isoformat() if inventory.date else None,
                 # "transaction_price": float(inventory.transaction_price) if inventory.transaction_price else None,
                 "transaction_quantity": inventory.transaction_quantity,
-                "net_amount": float(inventory.net_amount) if inventory.net_amount else None
+                "net_amount": float(inventory.net_amount) if inventory.net_amount else None,
+                "remarks": inventory.remarks
             }
             for inventory in detail_data
         ]

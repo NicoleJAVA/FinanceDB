@@ -15,7 +15,7 @@ def get_inventory():
     transactions = query.offset(offset).limit(limit).all()
 
     results = [
-        {
+        {  
             'stock_code': transaction.stock_code,
             'unit_price': transaction.unit_price,
             'transaction_type': transaction.transaction_type,
@@ -25,7 +25,8 @@ def get_inventory():
             'date': transaction.date.isoformat() if transaction.date else None,
             'transaction_quantity': transaction.transaction_quantity,
             'net_amount': transaction.net_amount,
-            'uuid': transaction.uuid  # 不需要轉換為字串
+            'uuid': transaction.uuid,  # 不需要轉換為字串
+            'remarks': transaction.remarks #inventory 新增欄位 SOP 3
         }
         for transaction in transactions
     ]
