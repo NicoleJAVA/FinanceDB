@@ -5,6 +5,7 @@ from flask_cors import CORS
 from sqlalchemy.dialects.postgresql import ARRAY
 from api.inventory import inventory_api
 from api.transaction import transaction_api
+from api.buy import buy_api
 from api.history import history_api
 from api.sellHistory import sell_history_api
 from model.model import SellHistory, Inventory, TransactionHistory
@@ -23,6 +24,7 @@ app.register_blueprint(inventory_api)
 app.register_blueprint(transaction_api)
 app.register_blueprint(history_api)
 app.register_blueprint(sell_history_api)
+app.register_blueprint(buy_api)
 
 
 
