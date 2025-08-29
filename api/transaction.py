@@ -3,6 +3,7 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 from model.model import SellHistory, Inventory, TransactionHistory
 from db import db
+from decimal import Decimal
 
 transaction_api = Blueprint('transaction_api', __name__)
 
@@ -96,31 +97,145 @@ def log_to_history(inventory_uuid, write_off_quantity, stock_code, transaction_d
 
 
 def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids):
-
-    print('\n SELL RECORD', sell_record, '\n');
+    print('\n\n\n SELL RECORD', sell_record, '\n')
     trans_datetime = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-    print('\n 日期 --', trans_datetime, '\n');
+    print('\n 日期 --', trans_datetime, '\n')
 
     sell_history_entry = {
         'data_uuid': sell_record_uuid,
-        'transaction_date': '2024-10-03 08:43:00', # datetime.utcnow() # stday todo stday
+        # 改：若前端有傳 transaction_date 就用它；否則用現在時間字串
+        'transaction_date': sell_record.get('transaction_date', trans_datetime),
         'stock_code': sell_record['stock_code'],
         'product_name': sell_record['product_name'],
         'unit_price': sell_record['unit_price'],
-        'quantity': sell_record['quantity'],
-        'transaction_value': sell_record.get('transaction_value', 0),  # 假如前端沒傳遞此值
-        'fee': sell_record['fee'],
-        'tax': sell_record['tax'],
-        'net_amount': sell_record.get('net_amount', 0),  # 假如前端沒傳遞此值
+        'quantity': sell_record.get('transaction_quantity', 0),
+        'transaction_value': sell_record.get('transaction_value', 0),
+        'fee': sell_record.get('estimated_fee', 0),
+        'tax': sell_record.get('estimated_tax', 0),
+
+        'net_amount': sell_record.get('net_amount', 0),
         'remaining_quantity': sell_record.get('remaining_quantity', 0),
         'profit_loss': sell_record.get('profit_loss', 0),
-        'transaction_history_uuids': transaction_history_uuids,
+
+        # 存成逗號字串（和 get_all 用法相容）
+        'transaction_history_uuids': ",".join(transaction_history_uuids),
     }
 
     db.session.add(SellHistory(**sell_history_entry))
     db.session.commit()
 
 
+@transaction_api.route('/transactions/preview-offset', methods=['POST'])
+def preview_write_off():
+    data = request.json
+    inventory_list = data.get('inventory', [])
+    a_table = data.get('aTable', {})
+
+    from decimal import Decimal, ROUND_HALF_UP
+
+    def rhup(x):  # JS/Excel 的四捨五入（5 進位）
+        return int(Decimal(x).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+
+    # A 表（賣出單）數值（Decimal）
+    a_net_amt    = Decimal(a_table.get('net_amount', 0))
+    a_qty        = Decimal(a_table.get('transaction_quantity', 1))  # avoid /0
+    a_unit_price = Decimal(a_table.get('unit_price', 0))
+    a_fee        = Decimal(a_table.get('estimated_fee', 0))
+    a_tax        = Decimal(a_table.get('estimated_tax', 0))
+
+    result = []
+
+    for item in inventory_list:
+        write_off_quantity = int(item.get('writeOffQuantity', 0) or 0)
+        if write_off_quantity <= 0:
+            continue
+
+        inv = Inventory.query.filter_by(uuid=item['uuid']).first()
+        if not inv:
+            continue
+
+        inv_qty     = Decimal(inv.transaction_quantity or 0)   # Excel：庫存原始股數當分母
+        write_qty   = Decimal(write_off_quantity)
+        inv_net_amt = Decimal(inv.net_amount or 0)
+
+        # 成本 / 收入：先算比例，按列 ROUND_HALF_UP
+        amortized_cost   = rhup(inv_net_amt * (write_qty / inv_qty))
+        amortized_income = rhup(a_net_amt   * (write_qty / a_qty))
+
+        # === 兩種費稅分攤基礎 ===
+        # 若前端（編輯畫面）有把庫存自己的 fee/tax 傳來（對齊 Excel）
+        inv_fee = item.get('fee', None)
+        inv_tax = item.get('tax', None)
+        if inv_fee is not None or inv_tax is not None:
+            # 「庫存基礎」：費稅分母用 inv_qty（和很多 Excel 表一致）
+            fee_base = Decimal(inv_fee or 0)
+            tax_base = Decimal(inv_tax or 0)
+            fee_share = rhup(fee_base * (write_qty / inv_qty))
+            tax_share = rhup(tax_base * (write_qty / inv_qty))
+        else:
+            # 「賣出單基礎」：沿用你原本作法（分母 a_qty）
+            fee_share = rhup(a_fee * (write_qty / a_qty))
+            tax_share = rhup(a_tax * (write_qty / a_qty))
+
+        # 損益：先算毛額，再扣掉分攤後的費稅；全部採 ROUND_HALF_UP
+        gross_diff  = rhup(write_qty * (a_unit_price - Decimal(inv.unit_price)))
+        profit_loss = gross_diff - (fee_share + tax_share)
+
+        result.append({
+            'uuid': inv.uuid,
+            'remaining_quantity': int(inv.transaction_quantity) - int(write_off_quantity),
+            'amortized_cost': amortized_cost,
+            'amortized_income': amortized_income,
+            'profit_loss': profit_loss,
+        })
+
+    return jsonify(result), 200
+
+# def preview_write_off():
+    # data = request.json
+    # inventory_list = data.get('inventory', [])
+    # a_table = data.get('aTable', {})
+
+    # result = []
+
+    # for item in inventory_list:
+    #     write_off_quantity = item.get('writeOffQuantity', 0)
+    #     if write_off_quantity <= 0:
+    #         continue
+
+    #     inventory_item = Inventory.query.filter_by(uuid=item['uuid']).first()
+
+    #     if not inventory_item:
+    #         continue
+
+    #     inv_qty = Decimal(inventory_item.transaction_quantity)
+    #     write_qty = Decimal(write_off_quantity)
+    #     net_amt = Decimal(inventory_item.net_amount)
+
+    #     amortized_cost = round(net_amt * (write_qty / inv_qty))
+
+    #     a_net_amt = Decimal(a_table.get('net_amount', 0))
+    #     a_qty = Decimal(a_table.get('transaction_quantity', 1))  # avoid division by 0
+    #     a_unit_price = Decimal(a_table.get('unit_price', 0))
+    #     a_fee = Decimal(a_table.get('estimated_fee', 0))
+    #     a_tax = Decimal(a_table.get('estimated_tax', 0))
+
+    #     amortized_income = round(a_net_amt * (write_qty / a_qty))
+
+    #     profit_loss = round(
+    #         write_qty * (a_unit_price - Decimal(inventory_item.unit_price)) -
+    #         (a_fee + a_tax) * (write_qty / a_qty)
+    #     )
+
+    #     result.append({
+    #         'uuid': inventory_item.uuid,
+    #         'remaining_quantity': int(inventory_item.transaction_quantity) - int(write_off_quantity),
+    #         'amortized_cost': int(amortized_cost),
+    #         'amortized_income': int(amortized_income),
+    #         'profit_loss': int(profit_loss),
+    #     })
+
+    # return jsonify(result), 200
 
 
 # 我希望
