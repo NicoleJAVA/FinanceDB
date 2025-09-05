@@ -1,6 +1,8 @@
 import uuid
 from datetime import datetime
 from db import db
+from sqlalchemy.dialects.postgresql import NUMERIC
+
 
 class SellHistory(db.Model):
     __tablename__ = 'sell_history'
@@ -56,8 +58,18 @@ class TransactionHistory(db.Model):
     inventory_uuid = db.Column(db.String(36), nullable=False)
     write_off_quantity = db.Column(db.Integer, nullable=False)
     stock_code = db.Column(db.String(255), nullable=False)
-    transaction_date = db.Column(db.Date, nullable=False)
+    transaction_date = db.Column(db.DateTime, nullable=False)
     sell_record_uuid = db.Column(db.String(36), nullable=False)
+        # === 新增的 B_before / B_after 欄位 ===
+    quantity_before    = db.Column(db.Integer)
+    unit_price_before  = db.Column(NUMERIC(18, 4))
+    net_amount_before  = db.Column(NUMERIC(18, 2))
+
+    remaining_quantity = db.Column(db.Integer)
+    amortized_cost     = db.Column(NUMERIC(18, 2))
+    amortized_income   = db.Column(NUMERIC(18, 2))
+    profit_loss        = db.Column(NUMERIC(18, 2))
+    profit_loss_2      = db.Column(NUMERIC(18, 2))
 
     def __init__(self, **kwargs):
         self.uuid = kwargs.get('uuid', str(uuid.uuid4()))
