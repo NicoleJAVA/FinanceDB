@@ -124,7 +124,9 @@ def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None)
         sell_record_uuid=sell_record_uuid,
         inventory_uuid=g('uuid', 'inventory_uuid'),
         stock_code=stock_code,
-        transaction_date=tx_date,               # ✅ 用呼叫端給的日期
+        transaction_date=tx_date,               # 用呼叫端給的日期
+
+        transaction_type='sell',
 
         write_off_quantity=g('writeOffQuantity', 'write_off_quantity', default=0),
 
