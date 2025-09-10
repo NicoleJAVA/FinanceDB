@@ -85,56 +85,6 @@ def batch_write_off():
     return jsonify({'status': 'ok', 'sell_record_uuid': sell_record_uuid}), 200
 
 
-# def batch_write_off():
-#     data = request.json
-#     data = request.get_json(silent=True) or {}
-#     a_table = data.get('aTable') or {}
-
-#     def pick(*keys):
-#         # 依序從 data 與 a_table 取第一個存在的鍵
-#         for k in keys:
-#             if k in data: return data[k]
-#         for k in keys:
-#             if k in a_table: return a_table[k]
-#         return None
-
-#     stock_code = pick('stockCode', 'stock_code')
-#     unit_price = pick('unitPrice', 'unit_price')
-#     transaction_quantity = pick('transactionQuantity', 'transaction_quantity')
-#     estimated_fee = pick('estimatedFee', 'estimated_fee', 'fee')
-#     estimated_tax = pick('estimatedTax', 'estimated_tax', 'tax')
-#     net_amount = pick('netAmount', 'net_amount')
-#     transaction_value = pick('transactionValue', 'transaction_value')
-#     transaction_date = pick('transactionDate', 'transaction_date')
-
-
-#     inventory = data.get('inventory') or data.get('inventory_list') or []
-#     sell_record = a_table
-
-#     sell_record_uuid = str(uuid.uuid4())  # 轉換為字串格式方便存儲
-
-#     print('\n\n\n', '1', stock_code, '2', transaction_quantity, '3', net_amount, '\n\n\n')
-#     if not stock_code or transaction_quantity is None or net_amount is None:
-#         return jsonify({'error': 'missing fields'}), 400
-
-
-#     # inventory_uuids = [item['uuid'] for item in inventory]
-#     transaction_history_uuids = []  # 用來儲存每筆歷史記錄的 UUID
-
-#     for item in inventory:
-#         inventory_uuid = item['uuid']
-#         write_off_quantity = item['writeOffQuantity']
-#         print('\n\n ]write_off_quantity ', type(write_off_quantity), '\n\n')
-#         print('\n 日期: ', transaction_date, '\n');
-#         [write_off_success, message] = perform_write_off(inventory_uuid, write_off_quantity, stock_code, transaction_date)
-#         if not write_off_success:
-#             return jsonify({'status': 'error', 'message': message}), 400
-#         history_uuid = log_to_history(inventory_uuid, write_off_quantity, stock_code, transaction_date, sell_record_uuid)
-#         transaction_history_uuids.append(history_uuid)
-
-#     log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids)
-
-#     return jsonify({'status': 'success'}), 200
 
 def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
     inventory_item = db.session.query(Inventory).filter_by(uuid=uuid).first()
@@ -142,7 +92,7 @@ def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
     if inventory_item:
         # if write_off_quantity > inventory_item.available_quantity:
         #     raise ValueError(f"Write-off quantity {write_off_quantity} exceeds available quantity {inventory_item.available_quantity}")
-        print('\n\n 沖掉 ', type(inventory_item.transaction_quantity), '\n\n')
+
         if write_off_quantity > inventory_item.transaction_quantity:
             message = "Write-off quantity is larger than inventory quantity!"
             # raise ValueError(message)

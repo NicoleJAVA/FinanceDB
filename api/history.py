@@ -40,35 +40,6 @@ def get_all_history():
 
     return jsonify(results)
 
-# import uuid
-# from datetime import datetime
-# from flask import Blueprint, jsonify, request
-# from model.model import SellHistory, Inventory, TransactionHistory
-# from db import db
-
-# history_api = Blueprint('history_api', __name__)
-
-
-# @history_api.route('/history/all', methods=['get'])
-# def get_all_history():
-
-#     historyRows = TransactionHistory.query.all()  # 使用 SQLAlchemy 查詢
-#     print('\n\n historyRows ', type(historyRows[0].write_off_quantity))
-#     results = [
-#         {
-#             'uuid': history.uuid,
-#             'transaction_uuid': history.transaction_uuid,
-#             'inventory_uuid': history.inventory_uuid,
-#             'write_off_quantity': history.write_off_quantity,
-#             'stock_code': history.stock_code,
-#             'transaction_date': history.transaction_date,
-#             'sell_record_uuid': history.sell_record_uuid,
-#         }
-#         for history in historyRows
-#     ]
-#     return jsonify(results)
-
-
 
 
 
