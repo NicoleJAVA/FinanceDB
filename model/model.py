@@ -60,6 +60,8 @@ class TransactionHistory(db.Model):
     stock_code = db.Column(db.String(255), nullable=False)
     transaction_date = db.Column(db.DateTime, nullable=False)
     sell_record_uuid = db.Column(db.String(36), nullable=False)
+    transaction_type = db.Column(db.String(36), nullable=False)
+    
         # === 新增的 B_before / B_after 欄位 ===
     quantity_before    = db.Column(db.Integer)
     unit_price_before  = db.Column(NUMERIC(18, 4))

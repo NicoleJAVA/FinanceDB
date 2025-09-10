@@ -45,8 +45,15 @@ def batch_write_off():
             if k in a_table: return a_table[k]
         return default
 
+
+    transactionDate = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+    # print('data[transaction_date]', data['transaction_date'])
+    print('a_table[transaction_date]', a_table['transaction_date'])
+
     stock_code = pick('stockCode', 'stock_code')
-    transaction_date = pick('transactionDate', 'transaction_date') or datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    # transaction_date = pick('transactionDate', 'transaction_date') or datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') # todo dele
+    transaction_date = transactionDate
     unit_price = pick('unitPrice', 'unit_price')
     transaction_quantity = pick('transactionQuantity', 'transaction_quantity')
     estimated_fee = pick('estimatedFee', 'estimated_fee', 'fee')
@@ -60,11 +67,15 @@ def batch_write_off():
     if not stock_code or transaction_quantity is None or net_amount is None:
         return jsonify({'error': 'missing fields'}), 400
 
+
+    print('\n\n\n\n', 'Log to History')
     # 這筆賣出單的 UUID
     sell_record_uuid = str(uuid.uuid4())
 
     transaction_history_uuids = []
     for item in inventory_list:
+        print('\n ---------------- \n', item)
+
         write_off_qty = int(item.get('writeOffQuantity') or item.get('write_off_quantity') or 0)
         if write_off_qty <= 0:
             continue
@@ -80,7 +91,7 @@ def batch_write_off():
             transaction_history_uuids.append(str(th_uuid))
 
     # 寫入 sell_history（含 snapshot_json）
-    log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids)
+    log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids, transactionDate)
 
     return jsonify({'status': 'ok', 'sell_record_uuid': sell_record_uuid}), 200
 
@@ -111,7 +122,9 @@ def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
 def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None):
     """把單筆沖銷寫進 TransactionHistory（含 before/after 欄位）"""
     th_uuid = str(uuid.uuid4())
-    tx_date = transaction_date or datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    # tx_date = transaction_date or datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    tx_date = transaction_date or datetime.utcnow()
+    print('\n', 'transaction_date:',  transaction_date,  'tx_date:',  tx_date)
 
     def g(*keys, default=None):
         for k in keys:
@@ -189,12 +202,12 @@ def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None)
 #     return th_uuid
 
 
-def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids):
-    trans_datetime = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids, transactionDate):
+    trans_datetime = transactionDate
 
     sell_history_entry = {
         'data_uuid': sell_record_uuid,
-        'transaction_date': sell_record.get('transaction_date', trans_datetime),
+        'transaction_date': transactionDate,
         'stock_code': sell_record['stock_code'],
         'product_name': sell_record['product_name'],
         'unit_price': sell_record['unit_price'],
