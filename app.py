@@ -8,6 +8,7 @@ from api.transaction import transaction_api
 from api.buy import buy_api
 from api.history import history_api
 from api.sellHistory import sell_history_api
+from api.init_db import init_db_api, init_db
 from model.model import SellHistory, Inventory, TransactionHistory
 from db import db
 
@@ -16,6 +17,7 @@ app = Flask(__name__)
 CORS(app)
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:123456@localhost/stock_db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://admin:123456@localhost/stock_db'
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql+psycopg2://admin:123456@localhost/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
@@ -25,6 +27,7 @@ app.register_blueprint(transaction_api)
 app.register_blueprint(history_api)
 app.register_blueprint(sell_history_api)
 app.register_blueprint(buy_api)
+app.register_blueprint(init_db_api)
 
 
 
@@ -76,9 +79,16 @@ def convert_string_to_number():
 
 
 
-if __name__ == '__main__':
-    with app.app_context():  # 建立應用程式上下文
-        db.create_all()  # 在上下文中創建資料表
-        convert_string_to_number()
-    app.run(port=7007, debug=True)
+# if __name__ == '__main__':
+#     with app.app_context():  # 建立應用程式上下文
+#         db.create_all()  # 在上下文中創建資料表
+#         convert_string_to_number()
+#     app.run(port=7007, debug=True)
 
+
+if __name__ == '__main__':
+    with app.app_context():
+        init_db()
+        db.create_all()
+        # convert_string_to_number()
+    app.run(port=7007, debug=True)
