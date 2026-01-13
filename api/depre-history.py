@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from model.model import SellHistory, Inventory, TransactionHistory
+from model.model import SellHistory, Inventory, SellDetailHistory
 from db import db
 
 history_api = Blueprint('history_api', __name__)
@@ -10,7 +10,7 @@ history_api = Blueprint('history_api', __name__)
 @history_api.route('/history/all', methods=['get'])
 def get_all_history():
 
-    historyRows = TransactionHistory.query.all()  # 使用 SQLAlchemy 查詢
+    historyRows = SellDetailHistory.query.all()  # 使用 SQLAlchemy 查詢
     results = []
 
     for history in historyRows:
