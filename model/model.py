@@ -19,7 +19,7 @@ class SellHistory(db.Model):
     net_amount = db.Column(db.Float)  
     remaining_quantity = db.Column(db.Integer)  
     profit_loss = db.Column(db.Float)  
-    transaction_history_uuids = db.Column(db.JSON, nullable=False)
+    sell_detail_history_uuids = db.Column(db.JSON, nullable=False)
 
     def __init__(self, **kwargs):
         self.data_uuid = kwargs.get('data_uuid', str(uuid.uuid4()))

@@ -139,7 +139,7 @@ def init_db():
                 net_amount FLOAT8,
                 remaining_quantity INTEGER,
                 profit_loss FLOAT8,
-                transaction_history_uuids JSON NOT NULL
+                sell_detail_history_uuids JSON NOT NULL
             );
         """)
 

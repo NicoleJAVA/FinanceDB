@@ -73,7 +73,7 @@ def batch_write_off():
     # 這筆賣出單的 UUID
     sell_record_uuid = str(uuid.uuid4())
 
-    transaction_history_uuids = []
+    sell_detail_history_uuids = []
     for item in inventory_list:
         print('\n ---------------- \n', item)
 
@@ -89,10 +89,10 @@ def batch_write_off():
             item=item
         )
         if th_uuid:
-            transaction_history_uuids.append(str(th_uuid))
+            sell_detail_history_uuids.append(str(th_uuid))
 
     # 寫入 sell_history（含 snapshot_json）
-    log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids, transactionDate)
+    log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, transactionDate)
 
     return jsonify({'status': 'ok', 'sell_record_uuid': sell_record_uuid}), 200
 
@@ -204,7 +204,7 @@ def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None)
 #     return th_uuid
 
 
-def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids, transactionDate):
+def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, transactionDate):
     trans_datetime = transactionDate
 
     sell_history_entry = {
@@ -219,91 +219,11 @@ def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids, t
         'tax': sell_record.get('estimated_tax', 0),
         'net_amount': sell_record.get('net_amount', 0),
         'profit_loss': sell_record.get('profit_loss', 0),
-        'transaction_history_uuids': ",".join(transaction_history_uuids),
+        'sell_detail_history_uuids': ",".join(sell_detail_history_uuids),
     }
 
     db.session.add(SellHistory(**sell_history_entry))
     db.session.commit()
-
-
-# ok. ver. old.
-# def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids):
-#     print('\n\n\n SELL RECORD', sell_record, '\n')
-#     trans_datetime = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-#     print('\n 日期 --', trans_datetime, '\n')
-
-#     # A 表主欄位（必須記錄，列表第一眼看到）
-#     qty = sell_record.get('transaction_quantity', 0)
-#     fee = sell_record.get('estimated_fee', sell_record.get('fee', 0))
-#     tax = sell_record.get('estimated_tax', sell_record.get('tax', 0))
-
-#     # 取得 B after / B before / totals（前端預覽頁面送來的備份快照）
-#     b_after = sell_record.get('b_after') or sell_record.get('b_items') or []
-#     b_before = sell_record.get('b_before') or []
-#     b_totals = sell_record.get('b_totals') or {}
-
-#     # A 的損益（若前端有就用前端；否則用 B after 的「損益試算二」總和或 profit_loss 總和兜出來）
-#     if 'profit_loss' in sell_record:
-#         a_profit_loss = sell_record['profit_loss']
-#     else:
-#         pl2_sum = sum([
-#             (r.get('profit_loss_2') or (r.get('amortized_cost', 0) + r.get('amortized_income', 0)))
-#             for r in b_after
-#         ])
-#         pl_sum = sum([r.get('profit_loss', 0) for r in b_after])
-#         a_profit_loss = pl2_sum if pl2_sum else pl_sum
-
-#     # transaction_history_uuids 安全處理（過濾 None 並轉字串）
-#     safe_uuids = [str(u) for u in (transaction_history_uuids or []) if u]
-
-#     sell_history_entry = {
-#         'data_uuid': sell_record_uuid,
-#         'transaction_date': sell_record.get('transaction_date', trans_datetime),
-#         'stock_code': sell_record['stock_code'],
-#         'product_name': sell_record['product_name'],
-#         'unit_price': sell_record['unit_price'],
-#         'quantity': qty,
-#         'transaction_value': sell_record.get('transaction_value', 0),
-#         'fee': fee,
-#         'tax': tax,
-#         'net_amount': sell_record.get('net_amount', 0),
-#         'remaining_quantity': sell_record.get('remaining_quantity', 0),
-#         'profit_loss': a_profit_loss,
-#         'transaction_history_uuids': ",".join(safe_uuids),
-#     }
-
-#     # ====== 備份快照（詳細頁才會看）======
-#     snapshot = {
-#         "A": {
-#             "transaction_date": sell_history_entry['transaction_date'],
-#             "stock_code": sell_history_entry['stock_code'],
-#             "product_name": sell_history_entry['product_name'],
-#             "unit_price": sell_history_entry['unit_price'],
-#             "transaction_quantity": qty,
-#             "transaction_value": sell_history_entry['transaction_value'],
-#             "estimated_fee": fee,
-#             "estimated_tax": tax,
-#             "net_amount": sell_history_entry['net_amount'],
-#             "profit_loss": a_profit_loss,
-#         },
-#         "B_before": b_before,
-#         "B_after": b_after,
-#         "totals": b_totals,
-#         "calc_meta": {
-#             "rounding_mode": "HALF_UP",
-#             "allocation_basis": sell_record.get("allocation_basis")
-#         }
-#     }
-
-#     try:
-#         # 只有在模型有 snapshot_json 欄位時才塞，避免未知欄位報錯
-#         if hasattr(SellHistory, 'snapshot_json'):
-#             sell_history_entry['snapshot_json'] = json.dumps(snapshot, ensure_ascii=False)
-#     except Exception as e:
-#         print('[snapshot_json] skip:', e)
-
-#     db.session.add(SellHistory(**sell_history_entry))
-#     db.session.commit()
 
 
 # 如果你「想要」在 selldetail 顯示備註

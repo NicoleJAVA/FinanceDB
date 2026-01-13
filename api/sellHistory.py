@@ -24,7 +24,7 @@ def sell_history_all():
             'tax': getattr(r, 'tax', 0),
             'net_amount': getattr(r, 'net_amount', 0),
             'profit_loss': getattr(r, 'profit_loss', 0),
-            'transaction_history_uuids': str(getattr(r, 'transaction_history_uuids', '') or ''), # 逗號字串
+            'sell_detail_history_uuids': str(getattr(r, 'sell_detail_history_uuids', '') or ''), # 逗號字串
         })
     return jsonify(items), 200
 
@@ -54,7 +54,7 @@ def get_sell_history_one():
         'net_amount': getattr(row, 'net_amount', 0),
         'remaining_quantity': getattr(row, 'remaining_quantity', 0),
         'profit_loss': getattr(row, 'profit_loss', 0),
-        'transaction_history_uuids': getattr(row, 'transaction_history_uuids', ''),
+        'sell_detail_history_uuids': getattr(row, 'sell_detail_history_uuids', ''),
         'remarks': getattr(row, 'remarks', ''),
     }
 
@@ -151,7 +151,7 @@ def preview_sell_history():
         'sell_history_entry': a_entry,
         'b_items': b_items,
         'b_totals': b_totals,
-        'transaction_history_uuids': ",".join(preview_th_uuids),
+        'sell_detail_history_uuids': ",".join(preview_th_uuids),
     }), 200
 
 
