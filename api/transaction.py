@@ -120,6 +120,12 @@ def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
         return [False, message]
         
 
+
+# 建議（但不是強制）
+# 如果你未來不再需要 transaction_uuid 這個欄位，其實可以：
+# 留 uuid 當唯一識別
+# transaction_uuid 之後移除
+# ➡️ 目前先不改也能正常跑
 def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None):
     """把單筆沖銷寫進 TransactionHistory（含 before/after 欄位）"""
     th_uuid = str(uuid.uuid4())
@@ -219,7 +225,7 @@ def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, t
         'tax': sell_record.get('estimated_tax', 0),
         'net_amount': sell_record.get('net_amount', 0),
         'profit_loss': sell_record.get('profit_loss', 0),
-        'sell_detail_history_uuids': ",".join(sell_detail_history_uuids),
+        'sell_detail_history_uuids': sell_detail_history_uuids,
     }
 
     db.session.add(SellHistory(**sell_history_entry))
@@ -241,10 +247,18 @@ def get_transaction_history_by_sell():
             SellDetailHistory.sell_record_uuid,
             SellDetailHistory.inventory_uuid,
             SellDetailHistory.write_off_quantity,
-            SellDetailHistory.buy_unit_price,
-            SellDetailHistory.sell_unit_price,
-            SellDetailHistory.profit_loss,
             SellDetailHistory.transaction_date,
+
+            SellDetailHistory.quantity_before,
+            SellDetailHistory.unit_price_before,
+            SellDetailHistory.net_amount_before,
+
+            SellDetailHistory.remaining_quantity,
+            SellDetailHistory.amortized_cost,
+            SellDetailHistory.amortized_income,
+            SellDetailHistory.profit_loss,
+            SellDetailHistory.profit_loss_2,
+
             Inventory.remarks.label('inventory_remarks')
         )
         .join(Inventory, Inventory.uuid == SellDetailHistory.inventory_uuid)
@@ -254,18 +268,26 @@ def get_transaction_history_by_sell():
     )
 
     return jsonify([
-        {
-            'transaction_uuid': r.transaction_uuid,
-            'sell_record_uuid': r.sell_record_uuid,
-            'inventory_uuid': r.inventory_uuid,
-            'write_off_quantity': r.write_off_quantity,
-            'buy_unit_price': r.buy_unit_price,
-            'sell_unit_price': r.sell_unit_price,
-            'profit_loss': r.profit_loss,
-            'transaction_date': r.transaction_date,
-            'remarks': r.inventory_remarks or ''
-        }
-        for r in rows
+    {
+        'transaction_uuid': r.transaction_uuid,
+        'sell_record_uuid': r.sell_record_uuid,
+        'inventory_uuid': r.inventory_uuid,
+        'write_off_quantity': r.write_off_quantity,
+        'transaction_date': r.transaction_date,
+
+        'quantity_before': r.quantity_before,
+        'unit_price_before': float(r.unit_price_before) if r.unit_price_before is not None else None,
+        'net_amount_before': float(r.net_amount_before) if r.net_amount_before is not None else None,
+
+        'remaining_quantity': r.remaining_quantity,
+        'amortized_cost': float(r.amortized_cost) if r.amortized_cost is not None else None,
+        'amortized_income': float(r.amortized_income) if r.amortized_income is not None else None,
+        'profit_loss': float(r.profit_loss) if r.profit_loss is not None else None,
+        'profit_loss_2': float(r.profit_loss_2) if r.profit_loss_2 is not None else None,
+
+        'remarks': r.inventory_remarks or ''
+    }
+    for r in rows
     ])
 
 # @transaction_api.route('/transactions/preview-offset', methods=['POST'])
