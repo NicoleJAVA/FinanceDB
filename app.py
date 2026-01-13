@@ -6,10 +6,10 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from api.inventory import inventory_api
 from api.transaction import transaction_api
 from api.buy import buy_api
-from api.history import history_api
+# from api.history import history_api
 from api.sellHistory import sell_history_api
 from api.init_db import init_db_api, init_db
-from model.model import SellHistory, Inventory, TransactionHistory
+from model.model import SellHistory, Inventory, SellDetailHistory
 from db import db
 
 app = Flask(__name__)
@@ -24,7 +24,7 @@ db.init_app(app)
  
 app.register_blueprint(inventory_api)
 app.register_blueprint(transaction_api)
-app.register_blueprint(history_api)
+# app.register_blueprint(history_api)
 app.register_blueprint(sell_history_api)
 app.register_blueprint(buy_api)
 app.register_blueprint(init_db_api)

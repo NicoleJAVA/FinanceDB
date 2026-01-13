@@ -143,10 +143,10 @@ def init_db():
             );
         """)
 
-    # transaction_history
-    if "transaction_history" not in existing_tables:
+    # sell_detail_history
+    if "sell_detail_history" not in existing_tables:
         cur2.execute("""
-            CREATE TABLE transaction_history (
+            CREATE TABLE sell_detail_history (
                 uuid CHAR(36) PRIMARY KEY NOT NULL UNIQUE,
                 transaction_uuid CHAR(36) NOT NULL UNIQUE,
                 inventory_uuid CHAR(36) NOT NULL,

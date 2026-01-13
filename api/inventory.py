@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from model.model import SellHistory, Inventory, TransactionHistory
+from model.model import SellHistory, Inventory, SellDetailHistory
 
 inventory_api = Blueprint('inventory_api', __name__)
 

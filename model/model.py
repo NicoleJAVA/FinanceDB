@@ -50,8 +50,8 @@ class Inventory(db.Model):
         super().__init__(**kwargs)
 
 
-class TransactionHistory(db.Model):
-    __tablename__ = 'transaction_history'
+class SellDetailHistory(db.Model):
+    __tablename__ = 'sell_detail_history'
     
     uuid = db.Column(db.String(36), primary_key=True, nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
     transaction_uuid = db.Column(db.String(36), nullable=False, unique=True)

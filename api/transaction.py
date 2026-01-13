@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from flask import Blueprint, jsonify, request
-from model.model import SellHistory, Inventory, TransactionHistory
+from model.model import SellHistory, Inventory, SellDetailHistory
 from db import db
 from decimal import Decimal
 import json
@@ -133,7 +133,8 @@ def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None)
                 return item[k]
         return default
 
-    new_row = TransactionHistory(
+    new_row = SellDetailHistory(
+        uuid=th_uuid,
         transaction_uuid=th_uuid,
         sell_record_uuid=sell_record_uuid,
         inventory_uuid=g('uuid', 'inventory_uuid'),
