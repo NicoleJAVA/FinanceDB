@@ -38,6 +38,7 @@ class Inventory(db.Model):
     # 交易相關欄位
     date = db.Column(db.Date, nullable=False)  # 成交日期
     transaction_quantity = db.Column(db.Integer, nullable=False)  # 成交股數
+    available_quantity = db.Column(db.Integer, nullable=False) # 現在還剩多少可用
     transaction_value = db.Column(db.Numeric(10, 2), nullable=False)  # 成交價金 (原 total_amount)
     estimated_fee = db.Column(db.Numeric(10, 2), nullable=False)  # 手續費
     estimated_tax = db.Column(db.Numeric(10, 2), nullable=False)  # 交易稅

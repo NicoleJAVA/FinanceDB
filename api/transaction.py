@@ -8,32 +8,6 @@ import json
 
 transaction_api = Blueprint('transaction_api', __name__)
 
-
-# todo dele
-# @transaction_api.route('/transactions', methods=['POST'])
-# def add_transaction():
-#     data = request.json
-#     transaction_uuid = str(uuid.uuid4())
-#     cursor = db.session()
-#     #inventory 新增欄位 SOP 1
-#     new_transaction = Inventory(
-#         id=transaction_uuid,
-#         stock_code=data['stock_code'],
-#         transaction_type=data['transaction_type'],
-#         unit_price=data['unit_price'],
-#         transaction_value=data['transaction_value'],
-#         estimated_fee=data['estimated_fee'],
-#         estimated_tax=data['estimated_tax'],
-#         date=data['date'],
-#         transaction_quantity=data.get('transaction_quantity'),
-#         net_amount=data.get('net_amount'),
-#         remarks=data.get('remarks'),
-#     )
-    
-#     db.session.add(new_transaction)
-#     db.session.commit()
-#     return jsonify({'message': 'Transaction added successfully!'}), 201
-
 @transaction_api.route('/transactions/offset', methods=['POST'])
 def batch_write_off():
     data = request.get_json(silent=True) or {}
@@ -82,7 +56,7 @@ def batch_write_off():
             continue
 
         # 這筆沖銷交易的 UUID
-        th_uuid = log_to_history(
+        th_uuid = log_to_sell_detail_history(
             sell_record_uuid=sell_record_uuid,
             stock_code=stock_code,
             transaction_date=transaction_date,
@@ -110,7 +84,7 @@ def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
             # raise ValueError(message)
             return [False, message]
         
-        inventory_item.transaction_quantity -= write_off_quantity
+        inventory_item.available_quantity -= write_off_quantity
 
         db.session.commit()
         return [True, "success"]
@@ -126,8 +100,8 @@ def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
 # 留 uuid 當唯一識別
 # transaction_uuid 之後移除
 # ➡️ 目前先不改也能正常跑
-def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None):
-    """把單筆沖銷寫進 TransactionHistory（含 before/after 欄位）"""
+def log_to_sell_detail_history(*, sell_record_uuid, stock_code, item, transaction_date=None):
+    """把單筆沖銷寫進 SellDetailHistory（含 before/after 欄位）"""
     th_uuid = str(uuid.uuid4())
     # tx_date = transaction_date or datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
     tx_date = transaction_date or datetime.utcnow()
@@ -139,6 +113,17 @@ def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None)
                 return item[k]
         return default
 
+    inventory = db.session.query(Inventory).filter_by(
+        uuid=g('uuid', 'inventory_uuid')
+    ).first()
+
+    if not inventory:
+        raise ValueError('Inventory not found')
+
+    quantity_before = inventory.available_quantity if inventory else None
+    write_off_qty = g('writeOffQuantity', 'write_off_quantity', default=0)
+    remaining_quantity = quantity_before - write_off_qty
+        
     new_row = SellDetailHistory(
         uuid=th_uuid,
         transaction_uuid=th_uuid,
@@ -152,62 +137,25 @@ def log_to_history(*, sell_record_uuid, stock_code, item, transaction_date=None)
         write_off_quantity=g('writeOffQuantity', 'write_off_quantity', default=0),
 
         # ---- B_before ----
-        quantity_before=g('transaction_quantity_before', 'quantity_before'),
+        # quantity_before=g('transaction_quantity_before', 'quantity_before'),
+        quantity_before=quantity_before,
         unit_price_before=g('unit_price_before', 'unit_price'),
         net_amount_before=g('net_amount_before', 'net_amount'),
 
         # ---- B_after ----
-        remaining_quantity=g('remaining_quantity'),
+        remaining_quantity=remaining_quantity,
         amortized_cost=g('amortized_cost'),
         amortized_income=g('amortized_income'),
         profit_loss=g('profit_loss'),
         profit_loss_2=g('profit_loss_2'),
     )
 
+
+    inventory.available_quantity = remaining_quantity
+
     db.session.add(new_row)
     db.session.commit()
     return th_uuid
-
-
-
-# def log_to_history(sell_record_uuid, stock_code, item):
-#     """
-#     item 來自前端 inventory 的單列，已包含 before/after 所需欄位
-#     """
-#     th_uuid = str(uuid.uuid4())
-
-#     # 兼容 key 命名（前端若有 camelCase / snake_case 都吃）
-#     def g(*keys, default=None):
-#         for k in keys:
-#             if k in item:
-#                 return item[k]
-#         return default
-
-#     new_row = TransactionHistory(
-#         transaction_uuid=th_uuid,
-#         sell_record_uuid=sell_record_uuid,
-#         inventory_uuid=g('uuid', 'inventory_uuid'),
-#         stock_code=stock_code,
-
-#         write_off_quantity=g('writeOffQuantity', 'write_off_quantity', default=0),
-
-#         # ---- B_before ----
-#         quantity_before   = g('transaction_quantity_before', 'quantity_before'),
-#         unit_price_before = g('unit_price_before', 'unit_price'),
-#         net_amount_before = g('net_amount_before', 'net_amount'),
-
-#         # ---- B_after ----
-#         remaining_quantity = g('remaining_quantity'),
-#         amortized_cost     = g('amortized_cost'),
-#         amortized_income   = g('amortized_income'),
-#         profit_loss        = g('profit_loss'),
-#         profit_loss_2      = g('profit_loss_2'),
-#     )
-
-#     db.session.add(new_row)
-#     db.session.flush()   # 取得 pk/uuid 時可用；無需求也可直接 commit
-#     db.session.commit()
-#     return th_uuid
 
 
 def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, transactionDate):
@@ -290,123 +238,11 @@ def get_transaction_history_by_sell():
     for r in rows
     ])
 
-# @transaction_api.route('/transactions/preview-offset', methods=['POST'])
-# def preview_write_off():
-#     data = request.json
-#     inventory_list = data.get('inventory', [])
-#     a_table = data.get('aTable', {})
-
-#     from decimal import Decimal, ROUND_HALF_UP
-
-#     def rhup(x):  # JS/Excel 的四捨五入（5 進位）
-#         return int(Decimal(x).quantize(Decimal('1'), rounding=ROUND_HALF_UP))
-
-#     # A 表（賣出單）數值（Decimal）
-#     a_net_amt    = Decimal(a_table.get('net_amount', 0))
-#     a_qty        = Decimal(a_table.get('transaction_quantity', 1))  # avoid /0
-#     a_unit_price = Decimal(a_table.get('unit_price', 0))
-#     a_fee        = Decimal(a_table.get('estimated_fee', 0))
-#     a_tax        = Decimal(a_table.get('estimated_tax', 0))
-
-#     result = []
-
-#     for item in inventory_list:
-#         write_off_quantity = int(item.get('writeOffQuantity', 0) or 0)
-#         if write_off_quantity <= 0:
-#             continue
-
-#         inv = Inventory.query.filter_by(uuid=item['uuid']).first()
-#         if not inv:
-#             continue
-
-#         inv_qty     = Decimal(inv.transaction_quantity or 0)   # Excel：庫存原始股數當分母
-#         write_qty   = Decimal(write_off_quantity)
-#         inv_net_amt = Decimal(inv.net_amount or 0)
-
-#         # 成本 / 收入：先算比例，按列 ROUND_HALF_UP
-#         amortized_cost   = rhup(inv_net_amt * (write_qty / inv_qty))
-#         amortized_income = rhup(a_net_amt   * (write_qty / a_qty))
-
-#         # === 兩種費稅分攤基礎 ===
-#         # 若前端（編輯畫面）有把庫存自己的 fee/tax 傳來（對齊 Excel）
-#         inv_fee = item.get('fee', None)
-#         inv_tax = item.get('tax', None)
-#         if inv_fee is not None or inv_tax is not None:
-#             # 「庫存基礎」：費稅分母用 inv_qty（和很多 Excel 表一致）
-#             fee_base = Decimal(inv_fee or 0)
-#             tax_base = Decimal(inv_tax or 0)
-#             fee_share = rhup(fee_base * (write_qty / inv_qty))
-#             tax_share = rhup(tax_base * (write_qty / inv_qty))
-#         else:
-#             # 「賣出單基礎」：沿用你原本作法（分母 a_qty）
-#             fee_share = rhup(a_fee * (write_qty / a_qty))
-#             tax_share = rhup(a_tax * (write_qty / a_qty))
-
-#         # 損益：先算毛額，再扣掉分攤後的費稅；全部採 ROUND_HALF_UP
-#         gross_diff  = rhup(write_qty * (a_unit_price - Decimal(inv.unit_price)))
-#         profit_loss = gross_diff - (fee_share + tax_share)
-
-#         result.append({
-#             'uuid': inv.uuid,
-#             'remaining_quantity': int(inv.transaction_quantity) - int(write_off_quantity),
-#             'amortized_cost': amortized_cost,
-#             'amortized_income': amortized_income,
-#             'profit_loss': profit_loss,
-#         })
-
-#     return jsonify(result), 200
-
-# def preview_write_off():
-    # data = request.json
-    # inventory_list = data.get('inventory', [])
-    # a_table = data.get('aTable', {})
-
-    # result = []
-
-    # for item in inventory_list:
-    #     write_off_quantity = item.get('writeOffQuantity', 0)
-    #     if write_off_quantity <= 0:
-    #         continue
-
-    #     inventory_item = Inventory.query.filter_by(uuid=item['uuid']).first()
-
-    #     if not inventory_item:
-    #         continue
-
-    #     inv_qty = Decimal(inventory_item.transaction_quantity)
-    #     write_qty = Decimal(write_off_quantity)
-    #     net_amt = Decimal(inventory_item.net_amount)
-
-    #     amortized_cost = round(net_amt * (write_qty / inv_qty))
-
-    #     a_net_amt = Decimal(a_table.get('net_amount', 0))
-    #     a_qty = Decimal(a_table.get('transaction_quantity', 1))  # avoid division by 0
-    #     a_unit_price = Decimal(a_table.get('unit_price', 0))
-    #     a_fee = Decimal(a_table.get('estimated_fee', 0))
-    #     a_tax = Decimal(a_table.get('estimated_tax', 0))
-
-    #     amortized_income = round(a_net_amt * (write_qty / a_qty))
-
-    #     profit_loss = round(
-    #         write_qty * (a_unit_price - Decimal(inventory_item.unit_price)) -
-    #         (a_fee + a_tax) * (write_qty / a_qty)
-    #     )
-
-    #     result.append({
-    #         'uuid': inventory_item.uuid,
-    #         'remaining_quantity': int(inventory_item.transaction_quantity) - int(write_off_quantity),
-    #         'amortized_cost': int(amortized_cost),
-    #         'amortized_income': int(amortized_income),
-    #         'profit_loss': int(profit_loss),
-    #     })
-
-    # return jsonify(result), 200
-
 
 # 我希望
-# log_to_history 裡面，每筆歷史都有自己的 uuid
+# log_to_sell_detail_history 裡面，每筆歷史都有自己的 uuid
 
-# 然後 log_sell_history 那邊，應該不是要存 inventory_uuids，而是要存 log_to_history 對應的那幾筆 uuid
+# 然後 log_sell_history 那邊，應該不是要存 inventory_uuids，而是要存 log_to_sell_detail_history 對應的那幾筆 uuid
 # ALTER TABLE transaction_history
 # ADD COLUMN transaction_uuid CHAR(36) NOT NULL;
 # ALTER TABLE sell_history

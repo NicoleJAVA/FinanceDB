@@ -24,6 +24,7 @@ def get_inventory():
             'estimated_tax': transaction.estimated_tax,
             'date': transaction.date.isoformat() if transaction.date else None,
             'transaction_quantity': transaction.transaction_quantity,
+            'available_quantity': transaction.available_quantity,
             'net_amount': transaction.net_amount,
             'uuid': transaction.uuid,  # 不需要轉換為字串
             'remarks': transaction.remarks #inventory 新增欄位 SOP 3
