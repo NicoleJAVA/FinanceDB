@@ -9,29 +9,30 @@ import json
 transaction_api = Blueprint('transaction_api', __name__)
 
 
-@transaction_api.route('/transactions', methods=['POST'])
-def add_transaction():
-    data = request.json
-    transaction_uuid = str(uuid.uuid4())
-    cursor = db.session()
-    #inventory 新增欄位 SOP 1
-    new_transaction = Inventory(
-        id=transaction_uuid,
-        stock_code=data['stock_code'],
-        transaction_type=data['transaction_type'],
-        unit_price=data['unit_price'],
-        transaction_value=data['transaction_value'],
-        estimated_fee=data['estimated_fee'],
-        estimated_tax=data['estimated_tax'],
-        date=data['date'],
-        transaction_quantity=data.get('transaction_quantity'),
-        net_amount=data.get('net_amount'),
-        remarks=data.get('remarks'),
-    )
+# todo dele
+# @transaction_api.route('/transactions', methods=['POST'])
+# def add_transaction():
+#     data = request.json
+#     transaction_uuid = str(uuid.uuid4())
+#     cursor = db.session()
+#     #inventory 新增欄位 SOP 1
+#     new_transaction = Inventory(
+#         id=transaction_uuid,
+#         stock_code=data['stock_code'],
+#         transaction_type=data['transaction_type'],
+#         unit_price=data['unit_price'],
+#         transaction_value=data['transaction_value'],
+#         estimated_fee=data['estimated_fee'],
+#         estimated_tax=data['estimated_tax'],
+#         date=data['date'],
+#         transaction_quantity=data.get('transaction_quantity'),
+#         net_amount=data.get('net_amount'),
+#         remarks=data.get('remarks'),
+#     )
     
-    db.session.add(new_transaction)
-    db.session.commit()
-    return jsonify({'message': 'Transaction added successfully!'}), 201
+#     db.session.add(new_transaction)
+#     db.session.commit()
+#     return jsonify({'message': 'Transaction added successfully!'}), 201
 
 @transaction_api.route('/transactions/offset', methods=['POST'])
 def batch_write_off():
@@ -304,42 +305,47 @@ def log_sell_history(sell_record, sell_record_uuid, transaction_history_uuids, t
 #     db.session.commit()
 
 
+# 如果你「想要」在 selldetail 顯示備註
+# 要在 /transactionHistory/by-sell
+# JOIN inventory 用 inventory_uuid 把 Inventory.remarks 帶出來
 @transaction_api.route('/transactionHistory/by-sell', methods=['GET'])
-def transaction_history_by_sell():
-    sell_uuid = request.args.get('sell_record_uuid')
-    if not sell_uuid:
-        return jsonify([])
+def get_transaction_history_by_sell():
+    sell_record_uuid = request.args.get('sell_record_uuid')
+    if not sell_record_uuid:
+        return jsonify({'error': 'missing sell_record_uuid'}), 400
 
-    rows = (TransactionHistory.query
-            .filter_by(sell_record_uuid=sell_uuid)
-            .order_by(TransactionHistory.transaction_date.asc())
-            .all())
+    rows = (
+        db.session.query(
+            SellDetailHistory.uuid.label('transaction_uuid'),
+            SellDetailHistory.sell_record_uuid,
+            SellDetailHistory.inventory_uuid,
+            SellDetailHistory.write_off_quantity,
+            SellDetailHistory.buy_unit_price,
+            SellDetailHistory.sell_unit_price,
+            SellDetailHistory.profit_loss,
+            SellDetailHistory.transaction_date,
+            Inventory.remarks.label('inventory_remarks')
+        )
+        .join(Inventory, Inventory.uuid == SellDetailHistory.inventory_uuid)
+        .filter(SellDetailHistory.sell_record_uuid == sell_record_uuid)
+        .order_by(SellDetailHistory.transaction_date.asc())
+        .all()
+    )
 
-    out = []
-    for r in rows:
-        out.append({
-            'inventory_uuid': r.inventory_uuid,
+    return jsonify([
+        {
+            'transaction_uuid': r.transaction_uuid,
             'sell_record_uuid': r.sell_record_uuid,
-            'stock_code': r.stock_code,
-            'transaction_date': r.transaction_date.strftime('%Y-%m-%d %H:%M:%S') if r.transaction_date else None,
-            'transaction_uuid': getattr(r, 'transaction_uuid', getattr(r, 'id', None)),
-
-            # before
-            'quantity_before': r.quantity_before,
-            'unit_price_before': r.unit_price_before,
-            'net_amount_before': r.net_amount_before,
-
-            # after
-            'remaining_quantity': r.remaining_quantity,
-            'amortized_cost': r.amortized_cost,
-            'amortized_income': r.amortized_income,
-            'profit_loss': r.profit_loss,
-            'profit_loss_2': r.profit_loss_2,
-
-            # write-off
+            'inventory_uuid': r.inventory_uuid,
             'write_off_quantity': r.write_off_quantity,
-        })
-    return jsonify(out)
+            'buy_unit_price': r.buy_unit_price,
+            'sell_unit_price': r.sell_unit_price,
+            'profit_loss': r.profit_loss,
+            'transaction_date': r.transaction_date,
+            'remarks': r.inventory_remarks or ''
+        }
+        for r in rows
+    ])
 
 # @transaction_api.route('/transactions/preview-offset', methods=['POST'])
 # def preview_write_off():
