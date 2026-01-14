@@ -8,27 +8,36 @@ buy_api = Blueprint('buy_api', __name__)
 
 @buy_api.route('/buy', methods=['POST'])
 def buy_transaction():
-    data = request.json
+    data = request.get_json(silent=True) or {}
     try:
+        required = ['stock_code', 'date', 'transaction_quantity', 'transaction_value', 'estimated_fee', 'estimated_tax', 'net_amount', 'unit_price']
+        missing = [k for k in required if k not in data]
+        if missing:
+            return jsonify({
+                'status': 'error',
+                'message': f"missing fields: {', '.join(missing)}"
+            }), 400
+
         new_uuid = str(uuid.uuid4())
         new_transaction = Inventory(
             uuid=new_uuid,
             stock_code=data['stock_code'],
             transaction_type='Buy',
+            created_at=datetime.utcnow(),
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
             transaction_quantity=int(data['transaction_quantity']),
+            available_quantity=int(data['transaction_quantity']),
             transaction_value=float(data['transaction_value']),
             estimated_fee=float(data['estimated_fee']),
             estimated_tax=float(data['estimated_tax']),
             net_amount=float(data['net_amount']),
-            unit_price=int(data['unit_price']),
+            unit_price=int(float(data['unit_price'])),
             remarks=data.get('remarks', '')
         )
 
         db.session.add(new_transaction)
         db.session.commit()
 
-        # 撈出剛才那筆資料
         saved_data = Inventory.query.filter_by(uuid=new_uuid).first()
         result = {
             'uuid': saved_data.uuid,

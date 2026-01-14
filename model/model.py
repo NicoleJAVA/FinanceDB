@@ -8,6 +8,7 @@ class SellHistory(db.Model):
     __tablename__ = 'sell_history'
 
     data_uuid = db.Column(db.String(36), primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    created_at = db.Column(db.DateTime, nullable=False)
     transaction_date = db.Column(db.DateTime, nullable=False)  
     stock_code = db.Column(db.String(50), nullable=False)  
     product_name = db.Column(db.String(255))  
@@ -37,6 +38,7 @@ class Inventory(db.Model):
     
     # 交易相關欄位
     date = db.Column(db.Date, nullable=False)  # 成交日期
+    created_at = db.Column(db.DateTime, nullable=False)
     transaction_quantity = db.Column(db.Integer, nullable=False)  # 成交股數
     available_quantity = db.Column(db.Integer, nullable=False) # 現在還剩多少可用
     transaction_value = db.Column(db.Numeric(10, 2), nullable=False)  # 成交價金 (原 total_amount)
@@ -55,6 +57,7 @@ class SellDetailHistory(db.Model):
     __tablename__ = 'sell_detail_history'
     
     uuid = db.Column(db.String(36), primary_key=True, nullable=False, unique=True, default=lambda: str(uuid.uuid4()))
+    created_at = db.Column(db.DateTime, nullable=False)
     transaction_uuid = db.Column(db.String(36), nullable=False, unique=True)
     inventory_uuid = db.Column(db.String(36), nullable=False)
     write_off_quantity = db.Column(db.Integer, nullable=False)

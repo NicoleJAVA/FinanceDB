@@ -14,6 +14,7 @@ def sell_history_all():
     for r in rows:
         items.append({
             'data_uuid': getattr(r, 'data_uuid', None),
+            'created_at': getattr(r, 'created_at', ''),
             'transaction_date': getattr(r, 'transaction_date', ''),
             'stock_code': getattr(r, 'stock_code', ''),
             'product_name': getattr(r, 'product_name', ''),
@@ -44,6 +45,7 @@ def get_sell_history_one():
     sh = {
         'data_uuid': getattr(row, 'data_uuid', None),
         'transaction_date': getattr(row, 'transaction_date', ''),
+        'created_at': getattr(row, 'created_at', ''),
         'stock_code': getattr(row, 'stock_code', ''),
         'product_name': getattr(row, 'product_name', ''),
         'unit_price': getattr(row, 'unit_price', 0),

@@ -4,6 +4,11 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from flask import Blueprint, jsonify, request
 
 
+
+# 在 navicat 裡查看現在的帳號
+# SELECT current_user;
+
+
 init_db_api = Blueprint('init_db_api', __name__)
 
 DB_NAME = "stock_db"
@@ -100,6 +105,7 @@ def init_db():
         cur2.execute("""
             CREATE TABLE inventory (
                 uuid CHAR(36) PRIMARY KEY NOT NULL UNIQUE,
+                created_at TIMESTAMP DEFAULT NOW(),
                 stock_code VARCHAR(255) NOT NULL,
                 transaction_type transaction_type_enum NOT NULL,
                 date DATE NOT NULL,
@@ -129,6 +135,7 @@ def init_db():
         cur2.execute("""
             CREATE TABLE sell_history (
                 data_uuid CHAR(36) PRIMARY KEY NOT NULL,
+                created_at TIMESTAMP NOT NULL,
                 transaction_date TIMESTAMP NOT NULL,
                 stock_code VARCHAR(50) NOT NULL,
                 product_name VARCHAR(255),
@@ -149,6 +156,7 @@ def init_db():
         cur2.execute("""
             CREATE TABLE sell_detail_history (
                 uuid CHAR(36) PRIMARY KEY NOT NULL UNIQUE,
+                created_at TIMESTAMP NOT NULL DEFAULT NOW(),
                 transaction_uuid CHAR(36) NOT NULL UNIQUE,
                 inventory_uuid CHAR(36) NOT NULL,
                 write_off_quantity INTEGER NOT NULL,

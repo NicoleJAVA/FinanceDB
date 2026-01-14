@@ -71,27 +71,27 @@ def batch_write_off():
     return jsonify({'status': 'ok', 'sell_record_uuid': sell_record_uuid}), 200
 
 
+# todo dele
+# def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
+#     inventory_item = db.session.query(Inventory).filter_by(uuid=uuid).first()
 
-def perform_write_off(uuid, write_off_quantity, stock_code, transaction_date):
-    inventory_item = db.session.query(Inventory).filter_by(uuid=uuid).first()
+#     if inventory_item:
+#         # if write_off_quantity > inventory_item.available_quantity:
+#         #     raise ValueError(f"Write-off quantity {write_off_quantity} exceeds available quantity {inventory_item.available_quantity}")
 
-    if inventory_item:
-        # if write_off_quantity > inventory_item.available_quantity:
-        #     raise ValueError(f"Write-off quantity {write_off_quantity} exceeds available quantity {inventory_item.available_quantity}")
-
-        if write_off_quantity > inventory_item.transaction_quantity:
-            message = "Write-off quantity is larger than inventory quantity!"
-            # raise ValueError(message)
-            return [False, message]
+#         if write_off_quantity > inventory_item.transaction_quantity:
+#             message = "Write-off quantity is larger than inventory quantity!"
+#             # raise ValueError(message)
+#             return [False, message]
         
-        inventory_item.available_quantity -= write_off_quantity
+#         inventory_item.available_quantity -= write_off_quantity
 
-        db.session.commit()
-        return [True, "success"]
-    else:
-        message = "Inventory item not found"
-        # raise ValueError(message)
-        return [False, message]
+#         db.session.commit()
+#         return [True, "success"]
+#     else:
+#         message = "Inventory item not found"
+#         # raise ValueError(message)
+#         return [False, message]
         
 
 
@@ -131,6 +131,7 @@ def log_to_sell_detail_history(*, sell_record_uuid, stock_code, item, transactio
         inventory_uuid=g('uuid', 'inventory_uuid'),
         stock_code=stock_code,
         transaction_date=tx_date,               # 用呼叫端給的日期
+        created_at=datetime.utcnow(),
 
         transaction_type='sell',
 
@@ -163,6 +164,7 @@ def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, t
 
     sell_history_entry = {
         'data_uuid': sell_record_uuid,
+        'created_at': datetime.utcnow(),
         'transaction_date': transactionDate,
         'stock_code': sell_record['stock_code'],
         'product_name': sell_record['product_name'],
@@ -194,6 +196,7 @@ def get_transaction_history_by_sell():
             SellDetailHistory.uuid.label('transaction_uuid'),
             SellDetailHistory.sell_record_uuid,
             SellDetailHistory.inventory_uuid,
+            SellDetailHistory.created_at,
             SellDetailHistory.write_off_quantity,
             SellDetailHistory.transaction_date,
 
@@ -220,6 +223,7 @@ def get_transaction_history_by_sell():
         'transaction_uuid': r.transaction_uuid,
         'sell_record_uuid': r.sell_record_uuid,
         'inventory_uuid': r.inventory_uuid,
+        'created_at': r.created_at,
         'write_off_quantity': r.write_off_quantity,
         'transaction_date': r.transaction_date,
 
