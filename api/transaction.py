@@ -169,7 +169,7 @@ def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, t
         'stock_code': sell_record['stock_code'],
         'product_name': sell_record['product_name'],
         'unit_price': sell_record['unit_price'],
-        'quantity': sell_record['transaction_quantity'],
+        'transaction_quantity': sell_record['transaction_quantity'],
         'transaction_value': sell_record.get('transaction_value', 0),
         'fee': sell_record.get('estimated_fee', 0),
         'tax': sell_record.get('estimated_tax', 0),

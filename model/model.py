@@ -13,7 +13,7 @@ class SellHistory(db.Model):
     stock_code = db.Column(db.String(50), nullable=False)  
     product_name = db.Column(db.String(255))  
     unit_price = db.Column(db.Float)  
-    quantity = db.Column(db.Integer)  
+    transaction_quantity = db.Column(db.Integer)  
     transaction_value = db.Column(db.Float)  
     fee = db.Column(db.Float)  
     tax = db.Column(db.Float)  

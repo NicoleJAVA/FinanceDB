@@ -140,7 +140,7 @@ def init_db():
                 stock_code VARCHAR(50) NOT NULL,
                 product_name VARCHAR(255),
                 unit_price FLOAT8,
-                quantity INTEGER,
+                transaction_quantity INTEGER,
                 transaction_value FLOAT8,
                 fee FLOAT8,
                 tax FLOAT8,
