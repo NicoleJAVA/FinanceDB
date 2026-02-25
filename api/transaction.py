@@ -162,6 +162,7 @@ def log_to_sell_detail_history(*, sell_record_uuid, stock_code, item, transactio
 def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, transactionDate):
     trans_datetime = transactionDate
 
+    # SellHistory 欄位設定 step. 6
     sell_history_entry = {
         'data_uuid': sell_record_uuid,
         'created_at': datetime.utcnow(),
@@ -176,6 +177,7 @@ def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, t
         'net_amount': sell_record.get('net_amount', 0),
         'profit_loss': sell_record.get('profit_loss', 0),
         'sell_detail_history_uuids': sell_detail_history_uuids,
+        'remarks': sell_record.get('remarks', ''),
     }
 
     db.session.add(SellHistory(**sell_history_entry))

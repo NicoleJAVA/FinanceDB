@@ -130,6 +130,7 @@ def init_db():
         if "remarks" not in cols:
             cur2.execute("ALTER TABLE inventory ADD COLUMN remarks TEXT;")
 
+    # SellHistory 欄位設定 step. 2
     # sell_history
     if "sell_history" not in existing_tables:
         cur2.execute("""
@@ -148,8 +149,19 @@ def init_db():
                 remaining_quantity INTEGER,
                 profit_loss FLOAT8,
                 sell_detail_history_uuids JSON NOT NULL
+                remarks TEXT
             );
         """)
+   # SellHistory 欄位設定 step. 3
+    else:
+        cur2.execute("""
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'sell_history';
+        """)
+        cols = {r[0] for r in cur2.fetchall()}
+        if "remarks" not in cols:
+            cur2.execute("ALTER TABLE sell_history ADD COLUMN remarks TEXT;")
 
     # sell_detail_history
     if "sell_detail_history" not in existing_tables:

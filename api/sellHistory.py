@@ -11,6 +11,8 @@ sell_history_api = Blueprint('sell_history_api', __name__)
 def sell_history_all():
     rows = db.session.query(SellHistory).order_by(SellHistory.transaction_date.desc()).all()
     items = []
+
+    # SellHistory 欄位設定 step. 5
     for r in rows:
         items.append({
             'data_uuid': getattr(r, 'data_uuid', None),
@@ -26,10 +28,10 @@ def sell_history_all():
             'tax': getattr(r, 'tax', 0),
             'net_amount': getattr(r, 'net_amount', 0),
             'profit_loss': getattr(r, 'profit_loss', 0),
+            'remarks': getattr(r, 'remarks', ''),
             'sell_detail_history_uuids': str(getattr(r, 'sell_detail_history_uuids', '') or ''), # 逗號字串
         })
     return jsonify(items), 200
-
 
 
 # 取得「單筆」 SellHistory
@@ -43,6 +45,7 @@ def get_sell_history_one():
     if not row:
         return jsonify({'error': 'not found'}), 404
 
+    # SellHistory 欄位設定 step. 4
     sh = {
         'data_uuid': getattr(row, 'data_uuid', None),
         'transaction_date': getattr(row, 'transaction_date', ''),

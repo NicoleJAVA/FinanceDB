@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import NUMERIC
 class SellHistory(db.Model):
     __tablename__ = 'sell_history'
 
+    # SellHistory 欄位設定 step. 1
     data_uuid = db.Column(db.String(36), primary_key=True, nullable=False, default=lambda: str(uuid.uuid4()))
     created_at = db.Column(db.DateTime, nullable=False)
     transaction_date = db.Column(db.DateTime, nullable=False)  
@@ -21,6 +22,7 @@ class SellHistory(db.Model):
     remaining_quantity = db.Column(db.Integer)  
     profit_loss = db.Column(db.Float)  
     sell_detail_history_uuids = db.Column(db.JSON, nullable=False)
+    remarks = db.Column(db.Text, nullable=True)
 
     def __init__(self, **kwargs):
         self.data_uuid = kwargs.get('data_uuid', str(uuid.uuid4()))
