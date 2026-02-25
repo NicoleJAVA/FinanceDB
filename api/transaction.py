@@ -5,6 +5,7 @@ from model.model import SellHistory, Inventory, SellDetailHistory
 from db import db
 from decimal import Decimal
 import json
+from datetime import date
 
 transaction_api = Blueprint('transaction_api', __name__)
 
@@ -21,14 +22,16 @@ def batch_write_off():
         return default
 
 
-    transactionDate = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    raw_date = data.get('transaction_date')
+    if raw_date:
+        transaction_date = datetime.strptime(raw_date, '%Y-%m-%d').date()
+    else:
+        transaction_date = date.today()
 
     # print('data[transaction_date]', data['transaction_date'])
     print('a_table[transaction_date]', a_table['transaction_date'])
 
     stock_code = pick('stockCode', 'stock_code')
-    # transaction_date = pick('transactionDate', 'transaction_date') or datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S') # todo dele
-    transaction_date = transactionDate
     unit_price = pick('unitPrice', 'unit_price')
     transaction_quantity = pick('transactionQuantity', 'transaction_quantity')
     estimated_fee = pick('estimatedFee', 'estimated_fee', 'fee')
@@ -66,7 +69,7 @@ def batch_write_off():
             sell_detail_history_uuids.append(str(th_uuid))
 
     # 寫入 sell_history（含 snapshot_json）
-    log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, transactionDate)
+    log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, transaction_date)
 
     return jsonify({'status': 'ok', 'sell_record_uuid': sell_record_uuid}), 200
 
@@ -131,7 +134,7 @@ def log_to_sell_detail_history(*, sell_record_uuid, stock_code, item, transactio
         inventory_uuid=g('uuid', 'inventory_uuid'),
         stock_code=stock_code,
         transaction_date=tx_date,               # 用呼叫端給的日期
-        created_at=datetime.utcnow(),
+        created_at=datetime.utcnow().replace(microsecond=0),
 
         transaction_type='sell',
 
@@ -165,7 +168,7 @@ def log_sell_history(sell_record, sell_record_uuid, sell_detail_history_uuids, t
     # SellHistory 欄位設定 step. 6
     sell_history_entry = {
         'data_uuid': sell_record_uuid,
-        'created_at': datetime.utcnow(),
+        'created_at': datetime.utcnow().replace(microsecond=0),
         'transaction_date': transactionDate,
         'stock_code': sell_record['stock_code'],
         'product_name': sell_record['product_name'],

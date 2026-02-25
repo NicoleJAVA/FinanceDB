@@ -23,7 +23,7 @@ def buy_transaction():
             uuid=new_uuid,
             stock_code=data['stock_code'],
             transaction_type='Buy',
-            created_at=datetime.utcnow(),
+            created_at=datetime.utcnow().replace(microsecond=0),
             date=datetime.strptime(data['date'], '%Y-%m-%d'),
             transaction_quantity=int(data['transaction_quantity']),
             available_quantity=int(data['transaction_quantity']),
@@ -42,6 +42,7 @@ def buy_transaction():
         result = {
             'uuid': saved_data.uuid,
             'stock_code': saved_data.stock_code,
+            'created_at': saved_data.created_at,
             'transaction_type': saved_data.transaction_type,
             'date': saved_data.date.isoformat(),
             'transaction_quantity': saved_data.transaction_quantity,
